@@ -208,6 +208,43 @@ def nullHeuristic(state, problem=None) -> float:
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
+
+    # Khởi tạo PriorityQueue cho A*
+    fringe = util.PriorityQueue()
+    
+    # Tập hợp lưu các trạng thái đã khám phá (Graph Search)
+    visited = {}
+    
+    # Trạng thái bắt đầu
+    start_state = problem.getStartState()
+    
+    # Độ ưu tiên ban đầu: f(n) = g(n) + h(n) = 0 + heuristic(start_state, problem)
+    start_priority = 0 + heuristic(start_state, problem)
+    fringe.push((start_state, [], 0), start_priority)
+    
+    while not fringe.isEmpty():
+        # Lấy nút có f(n) thấp nhất ra khỏi fringe
+        current_state, actions, current_cost = fringe.pop()
+        
+        # Kiểm tra đích
+        if problem.isGoalState(current_state):
+            return actions
+            
+        # Graph Search logic: Chỉ mở rộng nếu chưa thăm hoặc tìm thấy đường đi rẻ hơn
+        if (current_state not in visited) or (current_cost < visited[current_state]):
+            visited[current_state] = current_cost
+            
+            successors = problem.getSuccessors(current_state)
+            for successor_state, action, step_cost in successors:
+                new_actions = actions + [action]
+                new_g_cost = current_cost + step_cost
+                # f(n) = g(n) + h(n)
+                new_f_cost = new_g_cost + heuristic(successor_state, problem)
+                
+                fringe.update((successor_state, new_actions, new_g_cost), new_f_cost)
+                    
+    return []
+
     util.raiseNotDefined()
 
 # Abbreviations
