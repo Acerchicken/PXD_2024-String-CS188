@@ -163,6 +163,39 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
+    # Khởi tạo PriorityQueue để lưu trữ (trạng thái, danh sách hành động, chi phí tích lũy)
+    # Ưu tiên dựa trên chi phí tích lũy thấp nhất
+    fringe = util.PriorityQueue()
+    
+    # Tập hợp lưu các trạng thái đã khám phá (Graph Search)
+    visited = {}
+    
+    # Đẩy trạng thái bắt đầu vào fringe với chi phí là 0
+    start_state = problem.getStartState()
+    fringe.push((start_state, [], 0), 0)
+    
+    while not fringe.isEmpty():
+        # Lấy nút có chi phí thấp nhất ra khỏi fringe
+        current_state, actions, current_cost = fringe.pop()
+        
+        # Nếu đã đến đích, trả về danh sách các hành động
+        if problem.isGoalState(current_state):
+            return actions
+            
+        # Kiểm tra Graph Search
+        # Trong UCS, ta chỉ mở rộng nếu chưa thăm hoặc tìm thấy đường đi rẻ hơn
+        if (current_state not in visited) or (current_cost < visited[current_state]):
+            visited[current_state] = current_cost
+            
+            successors = problem.getSuccessors(current_state)
+            for successor_state, action, step_cost in successors:
+                new_actions = actions + [action]
+                new_cost = current_cost + step_cost
+                # Đẩy vào PriorityQueue với ưu tiên là tổng chi phí mới
+                fringe.update((successor_state, new_actions, new_cost), new_cost)
+                    
+    return []
+
     util.raiseNotDefined()
 
 def nullHeuristic(state, problem=None) -> float:
