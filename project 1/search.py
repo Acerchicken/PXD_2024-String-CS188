@@ -127,6 +127,37 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
+
+    # Khởi tạo Queue cho BFS (FIFO) [cite: 65]
+    fringe = util.Queue()
+    
+    # Tập hợp lưu các trạng thái đã khám phá (Graph Search) 
+    visited = []
+    
+    # Đẩy trạng thái bắt đầu và danh sách hành động trống vào fringe [cite: 62]
+    start_state = problem.getStartState()
+    fringe.push((start_state, []))
+    
+    while not fringe.isEmpty():
+        current_state, actions = fringe.pop()
+        
+        # Kiểm tra nếu đã đạt trạng thái đích [cite: 63]
+        if problem.isGoalState(current_state):
+            return actions
+            
+        # Chỉ mở rộng nếu trạng thái này chưa từng được khám phá 
+        if current_state not in visited:
+            visited.append(current_state)
+            
+            successors = problem.getSuccessors(current_state)
+            for successor_state, action, cost in successors:
+                if successor_state not in visited:
+                    # Lưu đường đi mới cùng với trạng thái kế tiếp [cite: 376]
+                    new_actions = actions + [action]
+                    fringe.push((successor_state, new_actions))
+                    
+    return []
+
     util.raiseNotDefined()
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
