@@ -90,7 +90,39 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Khởi tạo Stack để chứa các node (state, path_to_state)
+    fringe = util.Stack()
+    
+    # Danh sách các state đã khám phá để tránh lặp (Graph Search)
+    visited = set()
+    
+    # Đẩy trạng thái bắt đầu và danh sách hành động trống vào fringe
+    start_state = problem.getStartState()
+    fringe.push((start_state, []))
+    
+    while not fringe.isEmpty():
+        # Lấy node hiện tại ra khỏi fringe
+        current_state, actions = fringe.pop()
+        
+        # Nếu đã đến đích, trả về danh sách các hành động
+        if problem.isGoalState(current_state):
+            return actions
+            
+        # Kiểm tra nếu state chưa được khám phá (Graph Search)
+        if current_state not in visited:
+            visited.add(current_state)
+            
+            # Lấy các successor (trạng thái kế tiếp, hành động, chi phí)
+            successors = problem.getSuccessors(current_state)
+            
+            for successor_state, action, cost in successors:
+                if successor_state not in visited:
+                    # Tạo đường đi mới bằng cách cộng thêm hành động hiện tại
+                    new_actions = actions + [action]
+                    fringe.push((successor_state, new_actions))
+                    
+    return [] # Trả về trống nếu không tìm thấy đường đi
 
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
