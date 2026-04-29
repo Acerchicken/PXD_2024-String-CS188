@@ -160,7 +160,50 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
+        """
+        Trả về hành động minimax từ gameState hiện tại bằng cách sử dụng self.depth
+        và self.evaluationFunction.
+        """
+        # Pacman là agent 0, bắt đầu ở độ sâu 0
+        return self.maxValue(gameState, 0, 0)[1]
+    
         util.raiseNotDefined()
+
+    def maxValue(self, state, depth, agentIndex):
+        # Kiểm tra trạng thái kết thúc hoặc đạt độ sâu tối đa
+        if state.isWin() or state.isLose() or depth == self.depth:
+            return self.evaluationFunction(state), "Stop"
+
+        v = float("-inf")
+        bestAction = "Stop"
+        
+        for action in state.getLegalActions(agentIndex):
+            # Chuyển sang lượt của Ghost đầu tiên (agent 1)
+            successor = state.generateSuccessor(agentIndex, action)
+            score = self.minValue(successor, depth, 1)[0]
+            if score > v:
+                v, bestAction = score, action
+        return v, bestAction
+
+    def minValue(self, state, depth, agentIndex):
+        if state.isWin() or state.isLose():
+            return self.evaluationFunction(state), "Stop"
+
+        v = float("inf")
+        numAgents = state.getNumAgents()
+        
+        for action in state.getLegalActions(agentIndex):
+            successor = state.generateSuccessor(agentIndex, action)
+            # Nếu là Ghost cuối cùng, lượt tiếp theo là của Pacman (tăng depth)
+            if agentIndex == numAgents - 1:
+                score = self.maxValue(successor, depth + 1, 0)[0]
+            else:
+                # Nếu còn Ghost khác, tiếp tục lượt Min cho Ghost tiếp theo
+                score = self.minValue(successor, depth, agentIndex + 1)[0]
+            
+            if score < v:
+                v = score
+        return v, "Stop"
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
