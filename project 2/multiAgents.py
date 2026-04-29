@@ -75,7 +75,31 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        # Khởi tạo điểm số từ trạng thái kế tiếp
+        score = successorGameState.getScore()
+
+        # 1. Xử lý khoảng cách tới thức ăn
+        foodList = newFood.asList() # Sử dụng Note: newFood có hàm asList()
+        if foodList:
+            # Tìm thức ăn gần nhất bằng khoảng cách Manhattan
+            minFoodDist = min([util.manhattanDistance(newPos, food) for food in foodList])
+            # Sử dụng nghịch đảo của khoảng cách để tạo lực hấp dẫn (càng gần điểm càng cao)
+            score += 1.0 / minFoodDist
+
+        # 2. Xử lý khoảng cách tới các bóng ma
+        for ghostState in newGhostStates:
+            ghostPos = ghostState.getPosition()
+            distToGhost = util.manhattanDistance(newPos, ghostPos)
+            
+            if ghostState.scaredTimer > 0:
+                # Nếu ma đang sợ, chúng ta có thể tiến lại gần (hấp dẫn nhẹ)
+                score += max(8 - distToGhost, 0)
+            else:
+                # Nếu ma bình thường và quá gần (nguy hiểm), trừ điểm thật nặng
+                if distToGhost < 2:
+                    score -= 100
+
+        return score
 
 def scoreEvaluationFunction(currentGameState: GameState):
     """
