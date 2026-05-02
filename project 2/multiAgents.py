@@ -251,8 +251,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         numAgents = state.getNumAgents()
         for action in state.getLegalActions(agentIndex):
             successor = state.generateSuccessor(agentIndex, action)
-            
-            # Logic gọi đệ quy giống hệt Q2
+        
             if agentIndex == numAgents - 1:
                 score = self.maxValue(successor, depth + 1, 0, alpha, beta)[0]
             else:
@@ -285,7 +284,50 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
+        # Expectimax không dùng Alpha/Beta. Trả về hành động từ tuple (score, action)
+        return self.maxValue(gameState, 0, 0)[1]
         util.raiseNotDefined()
+
+    def maxValue(self, state, depth, agentIndex):  
+        if state.isWin() or state.isLose() or depth == self.depth:
+            return self.evaluationFunction(state), "Stop"
+
+        v = float("-inf")
+        bestAction = "Stop"
+        
+        for action in state.getLegalActions(agentIndex):
+            successor = state.generateSuccessor(agentIndex, action)
+            score = self.expectedValue(successor, depth, 1)
+            if score > v:
+                v, bestAction = score, action
+
+        return v, bestAction
+        
+    def expectedValue(self, state, depth, agentIndex):
+        if state.isWin() or state.isLose():
+            return self.evaluationFunction(state)
+
+        v = 0
+        actions = state.getLegalActions(agentIndex)
+        if not actions: return self.evaluationFunction(state) # Tránh chia cho 0
+        prob = 1.0 / len(actions) # Xác suất cho mỗi hành động
+        numAgents = state.getNumAgents()
+
+        for action in actions:
+            successor = state.generateSuccessor(agentIndex, action)
+            
+            if agentIndex == numAgents - 1:
+                # Nếu là Ghost cuối, quay lại lượt Pacman (tăng depth)
+                # Lấy [0] vì maxValue trả về (score, action)
+                score = self.maxValue(successor, depth + 1, 0)[0]
+            else:
+                # Tiếp tục tầng expected cho con ma tiếp theo
+                score = self.expectedValue(successor, depth, agentIndex + 1)
+            
+            # Cộng dồn giá trị trung bình
+            v += score * prob
+            
+        return v
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
