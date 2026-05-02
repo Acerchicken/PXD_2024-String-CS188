@@ -318,7 +318,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             
             if agentIndex == numAgents - 1:
                 # Nếu là Ghost cuối, quay lại lượt Pacman (tăng depth)
-                # Lấy [0] vì maxValue trả về (score, action)
                 score = self.maxValue(successor, depth + 1, 0)[0]
             else:
                 # Tiếp tục tầng expected cho con ma tiếp theo
@@ -337,6 +336,52 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
+    """
+    DESCRIPTION: 
+    Tính toán dựa trên: 
+    1. Điểm số gốc của game.
+    2. Nghịch đảo khoảng cách đến viên đậu gần nhất (tạo lực hút).
+    3. Phạt dựa trên số lượng đậu còn lại (ép Pacman phải ăn).
+    4. Tránh ma bình thường và săn ma đang sợ.
+    """
+    # Lấy dữ liệu từ GameState
+    newPos = currentGameState.getPacmanPosition()
+    newFood = currentGameState.getFood()
+    newGhostStates = currentGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    capsules = currentGameState.getCapsules()
+
+    # Khởi đầu bằng điểm số thực tế của game
+    score = currentGameState.getScore()
+
+    # 1. Xử lý thức ăn (Food)
+    foodList = newFood.asList()
+    if foodList:
+        minFoodDist = min([manhattanDistance(newPos, food) for food in foodList])
+        # Cộng thêm giá trị nghịch đảo: Càng gần đậu điểm càng tăng
+        score += 10.0 / minFoodDist
+
+    # Phạt dựa trên số lượng đậu còn lại: Càng ít đậu càng tốt
+    score -= 4 * len(foodList)
+
+    # 2. Xử lý bóng ma (Ghosts)
+    for i, ghostState in enumerate(newGhostStates):
+        dist = manhattanDistance(newPos, ghostState.getPosition())
+        if dist > 0:
+            if newScaredTimes[i] > 0:
+                # Ma đang sợ: Càng gần ma điểm càng cao (đi săn)
+                score += 200.0 / dist
+            else:
+                # Ma bình thường: Càng gần ma điểm càng trừ nặng
+                if dist < 2:
+                    score -= 1000 # Nguy hiểm chết người
+                else:
+                    score -= 10.0 / dist # Cảnh giác từ xa
+
+    # 3. Xử lý viên năng lượng (Capsules)
+    score -= 20 * len(capsules) # Ép Pacman ăn capsule
+
+    return score
     util.raiseNotDefined()
 
 # Abbreviation
