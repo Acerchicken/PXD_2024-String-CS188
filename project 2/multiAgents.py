@@ -215,7 +215,62 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
+        return self.maxValue(gameState, 0, 0, float("-inf"), float("inf"))[1]
+
         util.raiseNotDefined()
+
+    def maxValue(self, state, depth, agentIndex, alpha, beta):  
+        if state.isWin() or state.isLose() or depth == self.depth:
+            return self.evaluationFunction(state), "Stop"
+
+        v = float("-inf")
+        bestAction = "Stop"
+        
+        for action in state.getLegalActions(agentIndex):
+            successor = state.generateSuccessor(agentIndex, action)
+            score = self.minValue(successor, depth, 1, alpha, beta)[0]
+            if score > v:
+                v, bestAction = score, action
+
+            # --- LOGIC CẮT TỈA (PRUNING) ---
+            # Nếu giá trị v lớn hơn beta (giới hạn chịu đựng của Ghost),
+            # Ghost sẽ không bao giờ đi nhánh này -> Cắt tỉa (dừng vòng lặp)
+            if v > beta:
+                return v, bestAction
+            
+            # Cập nhật lại tiêu chuẩn alpha của Pacman
+            alpha = max(alpha, v)
+        return v, bestAction
+
+    def minValue(self, state, depth, agentIndex, alpha, beta):
+        if state.isWin() or state.isLose():
+            return self.evaluationFunction(state), "Stop"
+
+        v = float("inf")
+        bestAction = "Stop"
+        numAgents = state.getNumAgents()
+        for action in state.getLegalActions(agentIndex):
+            successor = state.generateSuccessor(agentIndex, action)
+            
+            # Logic gọi đệ quy giống hệt Q2
+            if agentIndex == numAgents - 1:
+                score = self.maxValue(successor, depth + 1, 0, alpha, beta)[0]
+            else:
+                score = self.minValue(successor, depth, agentIndex + 1, alpha, beta)[0]
+            
+            if score < v:
+                v, bestAction = score, action
+                
+            # --- LOGIC CẮT TỈA (PRUNING) ---
+            # Nếu giá trị v nhỏ hơn alpha (tiêu chuẩn của Pacman),
+            # Pacman sẽ không bao giờ chọn nhánh này -> Cắt tỉa (dừng vòng lặp)
+            if v < alpha:
+                return v, bestAction
+                
+            # Cập nhật lại giới hạn beta của các Ghost
+            beta = min(beta, v)
+            
+        return v, bestAction
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
