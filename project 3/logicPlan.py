@@ -565,10 +565,49 @@ def localization(problem, agent) -> Generator:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # 1. Thêm vào KB thông tin về bản đồ: Ô nào là tường (Wall), ô nào không phải
+    for x, y in non_outer_wall_coords:
+        wall_expr = PropSymbolExpr(wall_str, x, y)
+        if (x, y) in walls_list:
+            KB.append(wall_expr)  # Khẳng định (x, y) là tường
+        else:
+            KB.append(~wall_expr) # Khẳng định (x, y) KHÔNG phải là tường
 
+    # 2. Duyệt qua từng bước thời gian (timestep)
     for t in range(agent.num_timesteps):
+        # Thêm các tiên đề vật lý của Pacman tại thời điểm t
+        # (Bao gồm quy luật di chuyển, không thể xuyên tường, và vị trí duy nhất)
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, walls_grid, sensorAxioms, allLegalSuccessorAxioms))
+        
+        # Thêm hành động mà Pacman thực hiện tại thời điểm t vào KB
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        
+        # Thêm các quy luật cảm biến dựa trên dữ liệu Pacman thu nhận được (Percepts)
+        # Giúp xác định các ô xung quanh có tường hay không dựa trên cảm biến 4-bit
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+        
+        # 3. Tìm các vị trí Pacman có thể đang đứng dựa trên KB đã cập nhật
+        possible_locations = []
+        for x, y in non_outer_wall_coords:
+            pac_expr = PropSymbolExpr(pacman_str, x, y, time=t)
+            
+            # Kiểm tra xem vị trí (x, y) có KHẢ THI không (có tồn tại mô hình thỏa mãn KB và Pacman ở đó)
+            if findModel(conjoin(KB) & conjoin(pac_expr)):
+                possible_locations.append((x, y))
+            
+            # Tối ưu hóa KB: Nếu KB kéo theo (entails) Pacman ở (x, y), lưu luôn vào KB
+            if entails(conjoin(KB), pac_expr):
+                KB.append(pac_expr)
+            
+            # Tối ưu hóa KB: Nếu KB kéo theo Pacman KHÔNG ở (x, y), lưu luôn vào KB
+            if entails(conjoin(KB), ~pac_expr):
+                KB.append(~pac_expr)
+        
+        # Cập nhật trạng thái của agent sang bước tiếp theo
+        agent.moveToNextState(agent.actions[t])
+    
         "*** END YOUR CODE HERE ***"
+        # Trả về danh sách các vị trí khả thi tại mỗi bước thời gian
         yield possible_locations
 
 #______________________________________________________________________________
