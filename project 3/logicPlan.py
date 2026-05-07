@@ -18,6 +18,7 @@ Pacman agents (in logicAgents.py).
 """
 
 from typing import Dict, List, Tuple, Callable, Generator, Any
+from xml.parsers.expat import model
 import util
 import sys
 import logic
@@ -438,7 +439,43 @@ def positionLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # Bước 0: Thiết lập dữ kiện ban đầu
+    # Khẳng định: Tại thời điểm t=0, Pacman đang đứng tại vị trí xuất phát (x0, y0)
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+
+    for t in range(50):
+        print("timestep :", t) # In ra để theo dõi tiến độ giải SAT
+
+        # 1. Khẳng định quy luật vị trí tại thời điểm t:
+        # Tại mỗi bước t, Pacman chỉ có thể ở ĐÚNG 1 ô trong số các ô không phải tường (Không thể đứng ở 2 ô cùng lúc, và không thể biến mất khỏi bản đồ)
+        locations_at_t = [PropSymbolExpr(pacman_str, x, y, time=t) for x, y in non_wall_coords]
+        KB.append(exactlyOne(locations_at_t))
+
+        # 2. Kiểm tra xem đã đến đích chưa:
+        # Tạo câu mệnh đề: "Pacman đang ở vị trí đích (xg, yg) tại thời điểm t"
+        goal_expr = PropSymbolExpr(pacman_str, xg, yg, time=t)
+        
+        # Hỏi SAT Solver: "Với những gì tôi biết (KB), liệu có kịch bản nào làm cho goal_expr ĐÚNG không?"
+        goal_model = findModel(conjoin(KB) & goal_expr)
+        
+        # Nếu tìm thấy model (không phải False):
+        if goal_model:
+            # Trích xuất danh sách các hành động từ model đó và trả về đường đi
+            return extractActionSequence(goal_model, actions)
+
+        # 3. Chuẩn bị logic để bước sang t + 1 (Nếu bước t chưa tìm được đích)
+        
+        # A. Quy luật hành động: Tại mỗi bước t, Pacman phải thực hiện ĐÚNG 1 hành động
+        # (North, South, East, hoặc West)
+        actions_at_t = [PropSymbolExpr(action, time=t) for action in actions]
+        KB.append(exactlyOne(actions_at_t))
+
+        # B. Quy luật di chuyển (Successor Axioms):
+        # Định nghĩa logic vị trí cho bước t+1 dựa trên vị trí và hành động ở bước t
+        # (Vị trí mới = Vị trí cũ + Hành động tương ứng)
+        # Nối tất cả các quy luật di chuyển của mọi ô trống lại bằng phép AND (conjoin)
+        transition_rules = [pacmanSuccessorAxiomSingle(x, y, time=t+1, walls_grid=walls_grid) for x, y in non_wall_coords]
+        KB.append(conjoin(transition_rules))
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
