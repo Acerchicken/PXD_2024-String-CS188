@@ -241,6 +241,14 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
         return None
     
     "*** BEGIN YOUR CODE HERE ***"
+    # Mệnh đề vế trái: Pacman ở vị trí (x, y) tại thời điểm 'time'
+    pacman_current_pos = PropSymbolExpr(pacman_str, x, y, time=time)
+
+    # Kết hợp các nguyên nhân có thể xảy ra bằng phép OR (disjoin)
+    causes_expr = disjoin(possible_causes)
+    
+    # Trả về vế trái TƯƠNG ĐƯƠNG (%) vế phải
+    return pacman_current_pos % causes_expr
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -312,10 +320,30 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     pacphysics_sentences = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    # 1. Nếu có tường ở (x, y) thì Pacman không thể ở (x, y) lúc t
+    for x, y in all_coords:
+        wall = PropSymbolExpr(wall_str, x, y)
+        pacman_at = PropSymbolExpr(pacman_str, x, y, time=t)
+        pacphysics_sentences.append(wall >> ~pacman_at)
+
+    # 2. Pacman ở đúng DUY NHẤT một tọa độ (không phải tường ngoài) lúc t
+    pacman_coords = [PropSymbolExpr(pacman_str, x, y, time=t) for x, y in non_outer_wall_coords]
+    pacphysics_sentences.append(exactlyOne(pacman_coords))
+
+    # 3. Pacman thực hiện DUY NHẤT một hành động lúc t
+    action_exprs = [PropSymbolExpr(action, time=t) for action in DIRECTIONS]
+    pacphysics_sentences.append(exactlyOne(action_exprs))
+
+    # 4. Thêm Axiom về Sensor (Cảm biến) nếu có
+    if sensorModel is not None:
+        pacphysics_sentences.append(sensorModel(t, non_outer_wall_coords))
+
+    # 5. Thêm Axiom về chuyển đổi (Transition/Successor) nếu có
+    if successorAxioms is not None and t > 0:
+        pacphysics_sentences.append(successorAxioms(t, walls_grid, non_outer_wall_coords))
 
     return conjoin(pacphysics_sentences)
+
 
 
 def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], action0, action1, problem):
@@ -333,6 +361,14 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
         - a model where Pacman is at (x1, y1) at time t = 1
         - a model where Pacman is not at (x1, y1) at time t = 1
     """
+
+    """
+    Trình tự thực hiện:
+    1. Thêm các quy luật vật lý (axioms) cho bước thời gian t=0 và t=1.
+    2. Thêm dữ kiện về vị trí xuất phát lúc t=0.
+    3. Thêm dữ kiện về hành động đã thực hiện lúc t=0 và t=1.
+    4. Tìm model thỏa mãn việc có mặt tại x1_y1 và model thỏa mãn việc vắng mặt tại x1_y1.
+    """
     walls_grid = problem.walls
     walls_list = walls_grid.asList()
     all_coords = list(itertools.product(range(problem.getWidth()+2), range(problem.getHeight()+2)))
@@ -346,6 +382,35 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
     KB.append(conjoin(map_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
+    # 1. Thêm luật vật lý (Pacphysics) cho thời điểm t=0 và t=1
+    # Sử dụng allLegalSuccessorAxioms cho luật di chuyển như yêu cầu
+    # QUAN TRỌNG: t=0 KHÔNG thêm successorAxioms (để tránh lỗi t=-1)
+    KB.append(pacphysicsAxioms(0, all_coords, non_outer_wall_coords, walls_grid, None, None))
+
+    KB.append(pacphysicsAxioms(1, all_coords, non_outer_wall_coords, walls_grid, None, allLegalSuccessorAxioms))
+
+    # 2. Thêm sự thật: Vị trí của Pacman tại t=0
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+
+    # 3. Thêm sự thật: Các hành động Pacman thực hiện tại t=0 và t=1
+    KB.append(PropSymbolExpr(action0, time=0))
+    KB.append(PropSymbolExpr(action1, time=1))
+
+    # Gộp toàn bộ tri thức lại thành một biểu thức duy nhất
+    knowledge_base = conjoin(KB)
+
+    # Biến mệnh đề đại diện cho mục tiêu: "Pacman ở (x1, y1) lúc t=1"
+    pacman_at_x1y1_t1 = PropSymbolExpr(pacman_str, x1, y1, time=1)
+
+    # 4. Tìm Model 1: Thế giới mà Pacman CÓ MẶT tại (x1, y1) lúc t=1
+    # Biểu thức: KB & P[x1,y1]_1
+    model1 = findModel(knowledge_base & pacman_at_x1y1_t1)
+
+    # 5. Tìm Model 2: Thế giới mà Pacman KHÔNG CÓ MẶT tại (x1, y1) lúc t=1
+    # Biểu thức: KB & ~P[x1,y1]_1
+    model2 = findModel(knowledge_base & ~pacman_at_x1y1_t1)
+
+    return model1, model2
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
