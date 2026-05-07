@@ -504,7 +504,49 @@ def foodLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # 1. Pacman bắt đầu tại tọa độ (x0, y0) lúc t=0
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))   
+
+    # 2. Đánh dấu tất cả các vị trí có thức ăn lúc ban đầu
+    for x, y in food:
+        # Khẳng định: "Có thức ăn tại (x, y) lúc t=0"
+        KB.append(PropSymbolExpr(food_str, x, y, time=0))
+
+    for t in range(50):   
+        print("timestep :", t)
+        
+        # 3. Luật vật lý: Pacman ở đúng 1 vị trí tại thời điểm t
+        KB.append(exactlyOne([PropSymbolExpr(pacman_str, x, y, time=t) for x, y in non_wall_coords]))
+
+        # 4. ĐỊNH NGHĨA MỤC TIÊU (Goal Assertion):
+        # Mục tiêu là: Toàn bộ thức ăn tại mọi vị trí (x, y) đều KHÔNG CÒN NỮA (~Food)
+        goal_expr_list = [~PropSymbolExpr(food_str, x, y, time=t) for x, y in food] 
+
+        # Hỏi SAT Solver: "Có kịch bản nào mà KB đúng VÀ tất cả thức ăn đã bị ăn sạch không?"
+        goal_model = findModel(conjoin(KB) & conjoin(goal_expr_list))
+
+        if goal_model:
+            # Nếu tìm thấy, trả về chuỗi hành động ngay lập tức
+            return extractActionSequence(goal_model, actions)
+        
+        # 5. Luật hành động: Pacman thực hiện đúng 1 hành động lúc t
+        KB.append(exactlyOne([PropSymbolExpr(action, time=t) for action in actions]))
+
+        # 6. Luật di chuyển: Nối vị trí của Pacman từ t sang t+1
+        KB.append(conjoin([pacmanSuccessorAxiomSingle(x, y, time=t+1, walls_grid=walls) 
+                            for x, y in non_wall_coords]))
+        
+        # 7. LUẬT ĂN  (Food Successor Axioms):
+        for x, y in food:
+            # Luật A: Nếu Pacman đang ở (x, y) VÀ có thức ăn ở đó lúc t 
+            # => Thì ở bước t+1, thức ăn ở đó sẽ BIẾN MẤT (~Food)
+            KB.append(((PropSymbolExpr(pacman_str, x, y, time=t) & PropSymbolExpr(food_str, x, y, time=t)) 
+                        >> ~PropSymbolExpr(food_str, x, y, time=t+1)))
+            
+            # Luật B: Nếu Pacman KHÔNG ở (x, y) VÀ đang có thức ăn ở đó lúc t
+            # => Thì ở bước t+1, thức ăn đó VẪN CÒN (Food)
+            KB.append((~PropSymbolExpr(pacman_str, x, y, time=t) & PropSymbolExpr(food_str, x, y, time=t)) 
+                        >> PropSymbolExpr(food_str, x, y, time=t+1))
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
