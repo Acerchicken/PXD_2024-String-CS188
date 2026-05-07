@@ -173,6 +173,7 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     True
     """
     "*** BEGIN YOUR CODE HERE ***"
+    return disjoin(literals)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -185,6 +186,16 @@ def atMostOne(literals: List[Expr]) -> Expr:
     itertools.combinations may be useful here.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    # Lấy tất cả các cặp có thể có từ danh sách literals
+    pairs = itertools.combinations(literals, 2)
+
+    clauses = []
+    for a, b in pairs:
+        # Với mỗi cặp (a, b), tạo mệnh đề: không thể cùng lúc đúng (~a | ~b)
+        clauses.append(disjoin([~a, ~b]))
+
+    # Nối tất cả các điều kiện trên bằng phép AND
+    return conjoin(clauses)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -196,6 +207,7 @@ def exactlyOne(literals: List[Expr]) -> Expr:
     the expressions in the list is true.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    return conjoin([atLeastOne(literals), atMostOne(literals)])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
