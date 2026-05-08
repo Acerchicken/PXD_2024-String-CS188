@@ -685,7 +685,7 @@ def slam(problem, agent) -> Generator:
     # map describes what we know, for GUI rendering purposes. -1 is unknown, 0 is open, 1 is wall
     known_map = [[-1 for y in range(problem.getHeight()+2)] for x in range(problem.getWidth()+2)]
 
-    # We know that the outer_coords are all walls.
+    # 1. Khởi tạo: Đánh dấu các ô biên ngoài cùng chắc chắn là tường
     outer_wall_sent = []
     for x, y in all_coords:
         if ((x == 0 or x == problem.getWidth() + 1)
@@ -695,9 +695,49 @@ def slam(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # 2. Thêm vị trí xuất phát chắc chắn của Pacman tại t=0
+    KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
 
     for t in range(agent.num_timesteps):
+        # 3. Thêm các tiên đề vật lý SLAM
+        # Sử dụng SLAMSensorAxioms (đếm số tường) và SLAMSuccessorAxioms (di chuyển phức tạp)
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, known_map, SLAMSensorAxioms, SLAMSuccessorAxioms))
+        
+        # Thêm hành động thực hiện tại thời điểm t
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        
+        # Thêm quy luật cảm biến đếm số tường xung quanh
+        KB.append(numAdjWallsPerceptRules(t, agent.getPercepts()))
+
+        # 4. Suy luận đồng thời vị trí bản đồ (Mapping) và vị trí Pacman (Localization)
+        possible_locations = []
+        for x, y in non_outer_wall_coords:
+            pac_expr = PropSymbolExpr(pacman_str, x, y, time=t)
+            wall_expr = PropSymbolExpr(wall_str, x, y)
+            
+            # --- PHẦN MAPPING (Suy luận tường) ---
+            # Nếu KB chứng minh được (x, y) là tường
+            if entails(conjoin(KB), wall_expr):
+                KB.append(wall_expr)
+                known_map[x][y] = 1
+            # Nếu KB chứng minh được (x, y) KHÔNG phải tường
+            if entails(conjoin(KB), ~wall_expr):
+                KB.append(~wall_expr)
+                known_map[x][y] = 0
+            
+            # --- PHẦN LOCALIZATION (Suy luận vị trí Pacman) ---
+            # Kiểm tra xem tại thời điểm t, Pacman CÓ THỂ ở (x, y) hay không
+            if findModel(conjoin(KB) & conjoin(pac_expr)):
+                possible_locations.append((x, y))
+            
+            # Tối ưu hóa KB: Nếu KB kéo theo vị trí Pacman (chắc chắn đúng hoặc sai)
+            if entails(conjoin(KB), pac_expr):
+                KB.append(pac_expr)
+            if entails(conjoin(KB), ~pac_expr):
+                KB.append(~pac_expr)
+
+        # Cập nhật trạng thái agent để chuẩn bị cho bước thời gian tiếp theo
+        agent.moveToNextState(agent.actions[t])
         "*** END YOUR CODE HERE ***"
         yield (known_map, possible_locations)
 
