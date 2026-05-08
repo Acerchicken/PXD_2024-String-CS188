@@ -636,10 +636,37 @@ def mapping(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # 1. Khởi tạo vị trí ban đầu của Pacman tại thời điểm t=0 vào Cơ sở tri thức (KB)
+    # Vì đây là bài toán Mapping, ta biết chắc chắn vị trí xuất phát
+    KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
 
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
+        # 2. Thêm các tiên đề vật lý (Physics Axioms)
+        # Lưu ý: walls_grid được thay bằng known_map vì ta đang dần khám phá bản đồ
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, known_map, sensorAxioms, allLegalSuccessorAxioms))
+        
+        # 3. Thêm hành động tại thời điểm t và dữ liệu cảm biến thu được vào KB
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+
+        # 4. Suy luận vị trí các bức tường dựa trên KB đã cập nhật
+        for x, y in non_outer_wall_coords:
+            wall_expr = PropSymbolExpr(wall_str, x, y)
+            
+            # Nếu KB kéo theo (entails) rằng tại (x, y) CÓ tường:
+            if entails(conjoin(KB), wall_expr):
+                KB.append(wall_expr)      # Lưu vào KB để dùng cho các bước sau
+                known_map[x][y] = 1       # Cập nhật bản đồ hiển thị: Tường
+            
+            # Nếu KB kéo theo rằng tại (x, y) KHÔNG có tường:
+            if entails(conjoin(KB), ~wall_expr):
+                KB.append(~wall_expr)     # Lưu vào KB
+                known_map[x][y] = 0       # Cập nhật bản đồ hiển thị: Đường trống
+        
+        # Di chuyển agent sang trạng thái kế tiếp dựa trên hành động đã thực hiện
+        agent.moveToNextState(agent.actions[t])
+
+    # util.raiseNotDefined()
         yield known_map
 
 #______________________________________________________________________________
