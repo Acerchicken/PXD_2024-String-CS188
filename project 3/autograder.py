@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -13,7 +13,6 @@
 
 
 # imports from python standard library
-from __future__ import print_function
 import grading
 import importlib.util
 import optparse
@@ -30,11 +29,10 @@ except:
 
 # register arguments and set default values
 def readCommand(argv):
-    parser = optparse.OptionParser(description='Run public tests on student code')
-    parser.set_defaults(generateSolutions=False, edxOutput=False, gsOutput=False, muteOutput=False, printTestCase=False, noGraphics=False)
-    # BEGIN SOLUTION NO PROMPT
-    parser.set_defaults(generatePublicTests=False)
-    # END SOLUTION NO PROMPT
+    parser = optparse.OptionParser(
+        description='Run public tests on student code')
+    parser.set_defaults(generateSolutions=False, edxOutput=False, gsOutput=False,
+                        muteOutput=False, printTestCase=False, noGraphics=False)
     parser.add_option('--test-directory',
                       dest='testRoot',
                       default='test_cases',
@@ -83,12 +81,6 @@ def readCommand(argv):
                       dest='noGraphics',
                       action='store_true',
                       help='No graphics display for pacman games.')
-    # BEGIN SOLUTION NO PROMPT
-    parser.add_option('--generate-public-tests',
-                    dest='generatePublicTests',
-                    action='store_true',
-                    help='Generate ./test_cases/* from ./private_test_cases/*')
-    # END SOLUTION NO PROMPT
     (options, args) = parser.parse_args(argv)
     return options
 
@@ -125,23 +117,25 @@ def setModuleName(module, filename):
         elif type(o) == classType:
             setattr(o, '__file__', filename)
             # TODO: assign member __file__'s?
-        #print(i, type(o))
+        # print i, type(o)
 
 
 #from cStringIO import StringIO
 
-# def loadModuleString(moduleSource):
-#     # Below broken, imp doesn't believe its being passed a file:
-#     #    ValueError: load_module arg#2 should be a file or None
-#     #
-#     #f = StringIO(moduleCodeDict[k])
-#     #tmp = imp.load_module(k, f, k, (".py", "r", imp.PY_SOURCE))
-#     tmp = imp.new_module(k)
-#     exec(moduleCodeDict[k], tmp.__dict__)
-#     setModuleName(tmp, k)
-#     return tmp
+def loadModuleString(moduleSource):
+    # Below broken, imp doesn't believe its being passed a file:
+    #    ValueError: load_module arg#2 should be a file or None
+    #
+    #f = StringIO(moduleCodeDict[k])
+    #tmp = imp.load_module(k, f, k, (".py", "r", imp.PY_SOURCE))
+    tmp = imp.new_module(k)
+    exec(moduleCodeDict[k], tmp.__dict__)
+    setModuleName(tmp, k)
+    return tmp
+
 
 import py_compile
+
 
 def loadModuleFile(moduleName, filePath):
     # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
@@ -165,12 +159,12 @@ def readFile(path, root=""):
 ERROR_HINT_MAP = {
     'q1': {
         "<type 'exceptions.IndexError'>": """
-        We noticed that your project threw an IndexError on q1.
-        While many things may cause this, it may have been from
-        assuming a certain number of successors from a state space
-        or assuming a certain number of actions available from a given
-        state. Try making your code more general (no hardcoded indices)
-        and submit again!
+      We noticed that your project threw an IndexError on q1.
+      While many things may cause this, it may have been from
+      assuming a certain number of successors from a state space
+      or assuming a certain number of actions available from a given
+      state. Try making your code more general (no hardcoded indices)
+      and submit again!
     """
     },
     'q3': {
@@ -188,6 +182,7 @@ ERROR_HINT_MAP = {
 
 import pprint
 
+
 def splitStrings(d):
     d2 = dict(d)
     for k in d:
@@ -203,10 +198,10 @@ def printTest(testDict, solutionDict):
     pp = pprint.PrettyPrinter(indent=4)
     print("Test case:")
     for line in testDict["__raw_lines__"]:
-        print("   |", line)
+        print(("   |", line))
     print("Solution:")
     for line in solutionDict["__raw_lines__"]:
-        print("   |", line)
+        print(("   |", line))
 
 
 def runTest(testName, moduleDict, printTestCase=False, display=None):
@@ -236,7 +231,8 @@ def runTest(testName, moduleDict, printTestCase=False, display=None):
 # returns all the tests you need to run in order to run question
 def getDepends(testParser, testRoot, question):
     allDeps = [question]
-    questionDict = testParser.TestParser(os.path.join(testRoot, question, 'CONFIG')).parse()
+    questionDict = testParser.TestParser(
+        os.path.join(testRoot, question, 'CONFIG')).parse()
     if 'depends' in questionDict:
         depends = questionDict['depends'].split()
         for d in depends:
@@ -246,12 +242,13 @@ def getDepends(testParser, testRoot, question):
 
 # get list of questions to grade
 def getTestSubdirs(testParser, testRoot, questionToGrade):
-    # THIS IS WHERE QUESTIONS ARE SPECIFIED
-    problemDict = testParser.TestParser(os.path.join(testRoot, 'CONFIG')).parse()
+    problemDict = testParser.TestParser(
+        os.path.join(testRoot, 'CONFIG')).parse()
     if questionToGrade != None:
         questions = getDepends(testParser, testRoot, questionToGrade)
         if len(questions) > 1:
-            print('Note: due to dependencies, the following tests will be run: %s' % ' '.join(questions))
+            print(('Note: due to dependencies, the following tests will be run: %s' %
+                  ' '.join(questions)))
         return questions
     if 'order' in problemDict:
         return problemDict['order'].split()
@@ -271,7 +268,6 @@ def evaluate(generateSolutions, testRoot, moduleDict, exceptionMap=ERROR_HINT_MA
 
     questions = []
     questionDicts = {}
-    # HERE IS WHERE QUESTIONS ARE CREATED
     test_subdirs = getTestSubdirs(testParser, testRoot, questionToGrade)
     for q in test_subdirs:
         subdir_path = os.path.join(testRoot, q)
@@ -279,7 +275,8 @@ def evaluate(generateSolutions, testRoot, moduleDict, exceptionMap=ERROR_HINT_MA
             continue
 
         # create a question object
-        questionDict = testParser.TestParser(os.path.join(subdir_path, 'CONFIG')).parse()
+        questionDict = testParser.TestParser(
+            os.path.join(subdir_path, 'CONFIG')).parse()
         questionClass = getattr(testClasses, questionDict['class'])
         question = questionClass(questionDict, display)
         questionDicts[q] = questionDict
@@ -343,61 +340,6 @@ def getDisplay(graphicsByDefault, options=None):
     import textDisplay
     return textDisplay.NullGraphics()
 
-# BEGIN SOLUTION NO PROMPT
-import shutil
-
-def copy(srcDir, destDir, filename):
-    srcFilename = os.path.join(srcDir, filename)
-    destFilename = os.path.join(destDir, filename)
-    print("Copying {} -> {}".format(srcFilename, destFilename))
-    shutil.copy(srcFilename, destFilename)
-    # with open(os.path.join(srcDir, filename), 'r') as f1:
-    #     with open(os.path.join(destDir, filename), 'w') as f2:
-    #         f2.write(f1.read())
-
-def generatePublicTests(moduleDict, privateRoot='private_test_cases', publicRoot='test_cases'):
-    import testParser
-    import testClasses
-    for module in moduleDict:
-        setattr(sys.modules[__name__], module, moduleDict[module])
-
-    if not os.path.exists(publicRoot): os.mkdir(publicRoot)
-    copy(privateRoot, publicRoot, 'CONFIG')
-    for q in sorted(os.listdir(privateRoot)):
-        private_subdir_path = os.path.join(privateRoot, q)
-        public_subdir_path = os.path.join(publicRoot, q)
-        if not os.path.exists(public_subdir_path): os.mkdir(public_subdir_path)
-
-        if not os.path.isdir(private_subdir_path) or q[0] == '.':
-            continue
-
-        copy(private_subdir_path, public_subdir_path, 'CONFIG')
-
-        # create a question object
-        questionDict = testParser.TestParser(os.path.join(public_subdir_path, 'CONFIG')).parse()
-        questionClass = getattr(testClasses, questionDict['class'])
-        question = questionClass(questionDict, getDisplay(False))
-
-        tests = list(filter(lambda t: re.match(r'[^#~.].*\.test\Z', t), os.listdir(private_subdir_path)))
-        tests = list(map(lambda t: re.match(r'(.*)\.test\Z', t).group(1), tests))
-        for t in sorted(tests):
-            test_file = os.path.join(private_subdir_path, '%s.test' % t)
-            public_test_file = os.path.join(public_subdir_path, '%s.test' % t)
-            test_out_file = os.path.join(public_subdir_path, '%s.test_output' % t)
-            print("Creating public test case {} from {}".format(public_test_file, test_file))
-
-            testDict = testParser.TestParser(test_file).parse()
-            if testDict.get("disabled", "false").lower() == "true":
-                continue
-            testDict['test_out_file'] = test_out_file
-            testClass = getattr(projectTestClasses, testDict['class'])
-            testCase = testClass(question, testDict)
-
-            testCase.createPublicVersion()
-            testCase.emitPublicVersion(public_test_file)
-# END SOLUTION NO PROMPT
-
-
 
 if __name__ == '__main__':
     options = readCommand(sys.argv)
@@ -414,19 +356,15 @@ if __name__ == '__main__':
     moduleDict = {}
     for cp in codePaths:
         moduleName = re.match(r'.*?([^/]*)\.py', cp).group(1)
-        moduleDict[moduleName] = loadModuleFile(moduleName, os.path.join(options.codeRoot, cp))
-        
+        moduleDict[moduleName] = loadModuleFile(
+            moduleName, os.path.join(options.codeRoot, cp))
     moduleName = re.match(r'.*?([^/]*)\.py', options.testCaseCode).group(1)
-    moduleDict['projectTestClasses'] = loadModuleFile(moduleName, os.path.join(options.codeRoot, options.testCaseCode))
-    
-    # BEGIN SOLUTION NO PROMPT
-    if options.generatePublicTests:
-        generatePublicTests(moduleDict)
-        sys.exit()
-    # END SOLUTION NO PROMPT
+    moduleDict['projectTestClasses'] = loadModuleFile(
+        moduleName, os.path.join(options.codeRoot, options.testCaseCode))
 
     if options.runTest != None:
-        runTest(options.runTest, moduleDict, printTestCase=options.printTestCase, display=getDisplay(True, options))
+        runTest(options.runTest, moduleDict, printTestCase=options.printTestCase,
+                display=getDisplay(True, options))
     else:
         evaluate(options.generateSolutions, options.testRoot, moduleDict,
                  gsOutput=options.gsOutput,

@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -209,15 +209,6 @@ class GameState:
         """
         return self.data.layout.walls
 
-    def getCoordsWithoutWalls(self):
-        wall_grid = self.getWalls()
-        nonwall_coords_list = []
-        for y in range(wall_grid.height):
-            for x in range(wall_grid.width):
-                if not wall_grid[x][y]:
-                    nonwall_coords_list.append((x,y))
-        return nonwall_coords_list
-
     def hasFood(self, x, y):
         return self.data.food[x][y]
 
@@ -372,7 +363,8 @@ class PacmanRules:
 
         # Update Configuration
         vector = Actions.directionToVector(action, PacmanRules.PACMAN_SPEED)
-        pacmanState.configuration = pacmanState.configuration.generateSuccessor(vector)
+        pacmanState.configuration = pacmanState.configuration.generateSuccessor(
+            vector)
 
         # Eat
         next = pacmanState.configuration.getPosition()
@@ -406,9 +398,6 @@ class PacmanRules:
 
 
 class GhostRules:
-    # PMV
-    ghostCanStop = True
-    
     """
     These functions dictate how ghosts interact with their environment.
     """
@@ -420,13 +409,12 @@ class GhostRules:
         reach a dead end, but can turn 90 degrees at intersections.
         """
         conf = state.getGhostState(ghostIndex).configuration
-        possibleActions = Actions.getPossibleActions(conf, state.data.layout.walls)
+        possibleActions = Actions.getPossibleActions(
+            conf, state.data.layout.walls)
         reverse = Actions.reverseDirection(conf.direction)
-
-        # PMV
-        if not GhostRules.ghostCanStop and Directions.STOP in possibleActions:
+        if Directions.STOP in possibleActions:
             possibleActions.remove(Directions.STOP)
-        if reverse in possibleActions and len(possibleActions) > 1 and reverse != Directions.STOP:
+        if reverse in possibleActions and len(possibleActions) > 1:
             possibleActions.remove(reverse)
         return possibleActions
     getLegalActions = staticmethod(getLegalActions)
@@ -442,13 +430,15 @@ class GhostRules:
         if ghostState.scaredTimer > 0:
             speed /= 2.0
         vector = Actions.directionToVector(action, speed)
-        ghostState.configuration = ghostState.configuration.generateSuccessor(vector)
+        ghostState.configuration = ghostState.configuration.generateSuccessor(
+            vector)
     applyAction = staticmethod(applyAction)
 
     def decrementTimer(ghostState):
         timer = ghostState.scaredTimer
         if timer == 1:
-            ghostState.configuration.pos = nearestPoint(ghostState.configuration.pos)
+            ghostState.configuration.pos = nearestPoint(
+                ghostState.configuration.pos)
         ghostState.scaredTimer = max(0, timer - 1)
     decrementTimer = staticmethod(decrementTimer)
 
@@ -529,17 +519,20 @@ def readCommand(argv):
     parser.add_option('-n', '--numGames', dest='numGames', type='int',
                       help=default('the number of GAMES to play'), metavar='GAMES', default=1)
     parser.add_option('-l', '--layout', dest='layout',
-                      help=default('the LAYOUT_FILE from which to load the map layout'),
+                      help=default(
+                          'the LAYOUT_FILE from which to load the map layout'),
                       metavar='LAYOUT_FILE', default='mediumClassic')
     parser.add_option('-p', '--pacman', dest='pacman',
-                      help=default('the agent TYPE in the pacmanAgents module to use'),
+                      help=default(
+                          'the agent TYPE in the pacmanAgents module to use'),
                       metavar='TYPE', default='KeyboardAgent')
     parser.add_option('-t', '--textGraphics', action='store_true', dest='textGraphics',
                       help='Display output as text only', default=False)
     parser.add_option('-q', '--quietTextGraphics', action='store_true', dest='quietGraphics',
                       help='Generate minimal output and no graphics', default=False)
     parser.add_option('-g', '--ghosts', dest='ghost',
-                      help=default('the ghost agent TYPE in the ghostAgents module to use'),
+                      help=default(
+                          'the ghost agent TYPE in the ghostAgents module to use'),
                       metavar='TYPE', default='RandomGhost')
     parser.add_option('-k', '--numghosts', type='int', dest='numGhosts',
                       help=default('The maximum number of ghosts to use'), default=4)
@@ -577,7 +570,8 @@ def readCommand(argv):
         raise Exception("The layout " + options.layout + " cannot be found")
 
     # Choose a Pacman agent
-    noKeyboard = options.gameToReplay == None and (options.textGraphics or options.quietGraphics)
+    noKeyboard = options.gameToReplay == None and (
+        options.textGraphics or options.quietGraphics)
     pacmanType = loadAgent(options.pacman, noKeyboard)
     agentOpts = parseAgentArgs(options.agentArgs)
     if options.numTraining > 0:
@@ -606,12 +600,8 @@ def readCommand(argv):
         args['display'] = textDisplay.PacmanGraphics()
     else:
         import graphicsDisplay
-        if "fn" in agentOpts:
-            is_mapping_problem = agentOpts['fn'] in ["mp", 'slam']
-        else:
-            is_mapping_problem = False
         args['display'] = graphicsDisplay.PacmanGraphics(
-            options.zoom, frameTime=options.frameTime, render_walls_beforehand=(not is_mapping_problem))
+            options.zoom, frameTime=options.frameTime)
     args['numGames'] = options.numGames
     args['record'] = options.record
     args['catchExceptions'] = options.catchExceptions
@@ -621,7 +611,7 @@ def readCommand(argv):
     if options.gameToReplay != None:
         print('Replaying recorded game %s.' % options.gameToReplay)
         import pickle
-        f = open(options.gameToReplay, 'rb')
+        f = open(options.gameToReplay)
         try:
             recorded = pickle.load(f)
         finally:
@@ -645,7 +635,8 @@ def loadAgent(pacman, nographics):
     for moduleDir in pythonPathDirs:
         if not os.path.isdir(moduleDir):
             continue
-        moduleNames = [f for f in os.listdir(moduleDir) if f.endswith('gents.py')]
+        moduleNames = [f for f in os.listdir(
+            moduleDir) if f.endswith('gents.py')]
         for modulename in moduleNames:
             try:
                 module = __import__(modulename[:-3])
@@ -653,16 +644,19 @@ def loadAgent(pacman, nographics):
                 continue
             if pacman in dir(module):
                 if nographics and modulename == 'keyboardAgents.py':
-                    raise Exception('Using the keyboard requires graphics (not text display)')
+                    raise Exception(
+                        'Using the keyboard requires graphics (not text display)')
                 return getattr(module, pacman)
-    raise Exception('The agent ' + pacman + ' is not specified in any *Agents.py.')
+    raise Exception('The agent ' + pacman +
+                    ' is not specified in any *Agents.py.')
 
 
 def replayGame(layout, actions, display):
     import pacmanAgents
     import ghostAgents
     rules = ClassicGameRules()
-    agents = [pacmanAgents.GreedyAgent()] + [ghostAgents.RandomGhost(i+1) for i in range(layout.getNumGhosts())]
+    agents = [pacmanAgents.GreedyAgent()] + [ghostAgents.RandomGhost(i+1)
+                                             for i in range(layout.getNumGhosts())]
     game = rules.newGame(layout, agents[0], agents[1:], display)
     state = game.state
     display.initialize(state.data)
@@ -678,7 +672,7 @@ def replayGame(layout, actions, display):
     display.finish()
 
 
-def runGames(layout, pacman, ghosts, display, numGames, record, numTraining=0, catchExceptions=False, timeout=30, steps=1000):
+def runGames(layout, pacman, ghosts, display, numGames, record, numTraining=0, catchExceptions=False, timeout=30):
     import __main__
     __main__.__dict__['_display'] = display
 
@@ -695,21 +689,18 @@ def runGames(layout, pacman, ghosts, display, numGames, record, numTraining=0, c
         else:
             gameDisplay = display
             rules.quiet = False
-        game = rules.newGame(layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
-        if pacman.live_checking:
-            yield from game.run()
-        else:
-            for _ in game.run():
-                pass
-        
+        game = rules.newGame(layout, pacman, ghosts,
+                             gameDisplay, beQuiet, catchExceptions)
+        game.run()
         if not beQuiet:
             games.append(game)
 
         if record:
             import time
             import pickle
-            fname = ('recorded-game-%d' % (i + 1)) +  '-'.join([str(t) for t in time.localtime()[1:6]])
-            f = open(fname, 'wb')
+            fname = ('recorded-game-%d' % (i + 1)) + \
+                '-'.join([str(t) for t in time.localtime()[1:6]])
+            f = file(fname, 'w')
             components = {'layout': layout, 'actions': game.moveHistory}
             pickle.dump(components, f)
             f.close()
@@ -720,10 +711,12 @@ def runGames(layout, pacman, ghosts, display, numGames, record, numTraining=0, c
         winRate = wins.count(True) / float(len(wins))
         print('Average Score:', sum(scores) / float(len(scores)))
         print('Scores:       ', ', '.join([str(score) for score in scores]))
-        print('Win Rate:      %d/%d (%.2f)' % (wins.count(True), len(wins), winRate))
-        print('Record:       ', ', '.join([['Loss', 'Win'][int(w)] for w in wins]))
+        print('Win Rate:      %d/%d (%.2f)' %
+              (wins.count(True), len(wins), winRate))
+        print('Record:       ', ', '.join(
+            [['Loss', 'Win'][int(w)] for w in wins]))
 
-    yield games
+    return games
 
 
 if __name__ == '__main__':
@@ -738,7 +731,7 @@ if __name__ == '__main__':
     > python pacman.py --help
     """
     args = readCommand(sys.argv[1:])  # Get game components based on input
-    next(runGames(**args))
+    runGames(**args)
 
     # import cProfile
     # cProfile.run("runGames( **args )")

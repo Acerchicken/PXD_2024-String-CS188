@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -66,19 +66,22 @@ class DirectionalGhost(GhostAgent):
         if isScared:
             speed = 0.5
 
-        actionVectors = [Actions.directionToVector( a, speed ) for a in legalActions]
+        actionVectors = [Actions.directionToVector(
+            a, speed) for a in legalActions]
         newPositions = [(pos[0]+a[0], pos[1]+a[1]) for a in actionVectors]
         pacmanPosition = state.getPacmanPosition()
 
         # Select best actions given the state
-        distancesToPacman = [manhattanDistance( pos, pacmanPosition ) for pos in newPositions]
+        distancesToPacman = [manhattanDistance(
+            pos, pacmanPosition) for pos in newPositions]
         if isScared:
             bestScore = max(distancesToPacman)
             bestProb = self.prob_scaredFlee
         else:
             bestScore = min(distancesToPacman)
             bestProb = self.prob_attack
-        bestActions = [action for action, distance in zip( legalActions, distancesToPacman ) if distance == bestScore]
+        bestActions = [action for action, distance in zip(
+            legalActions, distancesToPacman) if distance == bestScore]
 
         # Construct distribution
         dist = util.Counter()
