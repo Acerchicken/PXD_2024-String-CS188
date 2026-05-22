@@ -82,8 +82,8 @@ class ValueIterationAgent(ValueEstimationAgent):
         # Duyệt qua các trạng thái tiếp theo có thể xảy ra và xác suất của chúng
         for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):  # Lấy danh sách các cặp (trạng thái đích, xác suất xảy ra dịch chuyển).
             reward = self.mdp.getReward(state, action, nextState)  # Lấy giá trị phần thưởng tức thì khi thực hiện hành động chuyển sang trạng thái mới.
-            # Công thức toán học
-            q_value += prob * (reward + self.discount * self.values[nextState])  # Áp dụng phương trình Bellman: nhân xác suất với tổng phần thưởng tức thì và giá trị chiết khấu tương lai.
+            # Áp dụng phương trình Bellman: nhân xác suất với tổng phần thưởng tức thì và giá trị chiết khấu tương lai.
+            q_value += prob * (reward + self.discount * self.values[nextState])  
         return q_value  # Trả về tổng giá trị Q-value kỳ vọng tích lũy được.
 
     def computeActionFromValues(self, state):
